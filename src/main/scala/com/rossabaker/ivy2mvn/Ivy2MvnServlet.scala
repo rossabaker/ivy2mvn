@@ -11,6 +11,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.ivy.plugins.parser.m2.PomWriterOptions.ConfigurationScopeMapping
 import org.apache.ivy.plugins.parser.m2.{PomWriterOptions, PomModuleDescriptorWriter}
 import java.text.ParseException
+import scala.collection.JavaConversions._
 
 class Ivy2MvnServlet extends ScalatraServlet {
   var ivyRoot: String = _
@@ -32,6 +33,13 @@ class Ivy2MvnServlet extends ScalatraServlet {
     writePom(md)
   }
 
+
+  protected val mapping: ConfigurationScopeMapping = {
+    val confs: Seq[String] =  "compile" :: "runtime" :: "test" :: "provided" :: "system" :: Nil
+    val mapping = Map(confs map { conf => (conf, conf) } : _*) + ("default" -> "compile")
+    new ConfigurationScopeMapping(mapping)
+  }
+
   private def parseModuleDescriptor(groupId: String, artifactId: String, version: String) = {
     val ivyUrl = new URL(List(ivyRoot, groupId, artifactId, version, "ivys", "ivy.xml").mkString("/"))
     try {
@@ -45,7 +53,8 @@ class Ivy2MvnServlet extends ScalatraServlet {
   private def writePom(md: ModuleDescriptor): Unit =
     // What?!  I can't write to a stream?
     withTempFile("ivy2mvn", Some("pom")) { pomFile =>
-      PomModuleDescriptorWriter.write(md, pomFile, new PomWriterOptions)
+      val options = (new PomWriterOptions).setMapping(mapping)
+      PomModuleDescriptorWriter.write(md, pomFile, options)
       val in = new FileReader(pomFile)
       try {
         IOUtils.copy(in, response.getWriter)
