@@ -10,6 +10,7 @@ import java.io.{FileReader, File}
 import org.apache.commons.io.IOUtils
 import org.apache.ivy.plugins.parser.m2.PomWriterOptions.ConfigurationScopeMapping
 import org.apache.ivy.plugins.parser.m2.{PomWriterOptions, PomModuleDescriptorWriter}
+import java.text.ParseException
 
 class Ivy2MvnServlet extends ScalatraServlet {
   val ivyRoot = "http://databinder.net/repo"
@@ -19,7 +20,13 @@ class Ivy2MvnServlet extends ScalatraServlet {
     val artifactId = params("artifactId")
     val version = params("version")
     val ivyUrl = new URL(List(ivyRoot, groupId, artifactId, version, "ivys", "ivy.xml").mkString("/"))
-    val md = XmlModuleDescriptorParser.getInstance.parseDescriptor(new IvySettings, ivyUrl, false)
+    val md =
+      try {
+        XmlModuleDescriptorParser.getInstance.parseDescriptor(new IvySettings, ivyUrl, false)
+      }
+      catch {
+        case e: ParseException => halt(404)
+      }
     // What?!  I can't write to a stream?
     val pomFile = File.createTempFile("ivy2mvn", "pom")
     try {
