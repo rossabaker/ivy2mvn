@@ -7,6 +7,10 @@
 	<servlet>
 		<servlet-name>ivy2mvn</servlet-name>
 		<servlet-class>com.rossabaker.ivy2mvn.Ivy2MvnServlet</servlet-class>
+        <init-param>
+            <param-name>ivy.root</param-name>
+            <param-value>http://databinder.net/repo</param-value>
+        </init-param>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>ivy2mvn</servlet-name>

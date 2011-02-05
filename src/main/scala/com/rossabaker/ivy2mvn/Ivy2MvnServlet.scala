@@ -13,7 +13,7 @@ import org.apache.ivy.plugins.parser.m2.{PomWriterOptions, PomModuleDescriptorWr
 import java.text.ParseException
 
 class Ivy2MvnServlet extends ScalatraServlet {
-  val ivyRoot = "http://databinder.net/repo"
+  var ivyRoot: String = _
 
   get("/*/:artifactId/:version/:artifactId-:version.:ext") {
     val groupId = params("splat").replaceAll("/", ".")
@@ -52,5 +52,9 @@ class Ivy2MvnServlet extends ScalatraServlet {
       pomFile.delete()
     }
     ()
+  }
+
+  override def init = {
+    ivyRoot = getServletConfig.getInitParameter("ivy.root")
   }
 }
