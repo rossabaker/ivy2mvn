@@ -15,6 +15,15 @@ import java.text.ParseException
 class Ivy2MvnServlet extends ScalatraServlet {
   val ivyRoot = "http://databinder.net/repo"
 
+  get("/*/:artifactId/:version/:artifactId-:version.:ext") {
+    val groupId = params("splat").replaceAll("/", ".")
+    val artifactId = params("artifactId")
+    val version = params("version")
+    val ext = params("ext")
+    val ivyUrl = List(ivyRoot, groupId, artifactId, version, ext+"s", artifactId+"."+ext).mkString("/")
+    redirect(ivyUrl)
+  }
+
   get("/*/:artifactId/:version/:artifactId-:version.pom") {
     val groupId = params("splat").replaceAll("/", ".")
     val artifactId = params("artifactId")
