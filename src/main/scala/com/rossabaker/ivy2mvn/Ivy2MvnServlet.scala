@@ -28,17 +28,23 @@ class Ivy2MvnServlet extends ScalatraServlet {
     val groupId = params("splat").replaceAll("/", ".")
     val artifactId = params("artifactId")
     val version = params("version")
+    val md = parseModuleDescriptor(groupId, artifactId, version)
+    writePom(md)
+  }
+
+  private def parseModuleDescriptor(groupId: String, artifactId: String, version: String) = {
     val ivyUrl = new URL(List(ivyRoot, groupId, artifactId, version, "ivys", "ivy.xml").mkString("/"))
-    val md =
-      try {
-        XmlModuleDescriptorParser.getInstance.parseDescriptor(new IvySettings, ivyUrl, false)
-      }
-      catch {
-        case e: ParseException => halt(404)
-      }
-    // What?!  I can't write to a stream?
-    val pomFile = File.createTempFile("ivy2mvn", "pom")
     try {
+      XmlModuleDescriptorParser.getInstance.parseDescriptor(new IvySettings, ivyUrl, false)
+    }
+    catch {
+      case e: ParseException => halt(404)
+    }
+  }
+
+  private def writePom(md: ModuleDescriptor): Unit =
+    // What?!  I can't write to a stream?
+    withTempFile("ivy2mvn", Some("pom")) { pomFile =>
       PomModuleDescriptorWriter.write(md, pomFile, new PomWriterOptions)
       val in = new FileReader(pomFile)
       try {
@@ -48,10 +54,15 @@ class Ivy2MvnServlet extends ScalatraServlet {
         in.close()
       }
     }
-    finally {
-      pomFile.delete()
+
+  private def withTempFile[A](prefix: String = "ivy2mvn", suffix: Option[String] = None)(f: File => A) = {
+    val file = File.createTempFile(prefix, suffix.getOrElse(null))
+    try {
+      f(file)
     }
-    ()
+    finally {
+      file.delete()
+    }
   }
 
   override def init = {
